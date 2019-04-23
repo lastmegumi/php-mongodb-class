@@ -29,7 +29,6 @@ class _MongoDB{
 		$result = $this->mcon->executeBulkWrite($this->d_t, $bulk, $writeConcern);
 	}
 
-
 	function saveAll($documents = array()){
 		if(!$documents){ return;	}
 		$bulk = new MongoDB\Driver\BulkWrite;
@@ -49,13 +48,18 @@ class _MongoDB{
 		return $arr;
 	}
 
-	function find(){
+	function find($filter = [], $options = [], $join = []){
 		$query = new MongoDB\Driver\Query($filter, $options);
 		$cursor = $this->mcon->executeQuery($this->d_t, $query);
 		foreach ($cursor as $document) {
+			if($join){
+				$table = $join['name']? $join['name']:$join['table'];
+				$key = $join['key']? $join['key']: $this->table . "_id";
+				$this->setTable($join['table']);
+				$document->$table = $this->find([$key => $document->_id], @$join['join']);
+			}
 			return $document;
 		}
-		//return $arr;
 	}
 
 	function update($filter = [], $field = [], $options = []){
@@ -77,7 +81,18 @@ class _MongoDB{
 	}
 
 	function deleteAll($filter = []){
-		$this->delete($filter, ['limit' => 0])
+		$this->delete($filter, ['limit' => 0]);
 	}
+}
+
+$md = new _MongoDB();
+try {
+	
+$res = $md->find([],[],["table" =>'runoob']);
+print_r($res);
+//$md->setTable("runoob");
+//$md->save(['sites_id'	=>	$res->_id, "name"	=>	"ceshi"]);
+} catch (Exception $e) {
+	print_r($e->getMessage());
 }
 ?>
